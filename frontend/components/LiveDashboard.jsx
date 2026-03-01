@@ -91,14 +91,6 @@ export default function LiveDashboard() {
         };
     }, [selectedRegionId]); // Re-run effect and re-subscribe if the selectedRegionId changes
 
-    const handleRegionChange = (e) => {
-        const newRegionId = e.target.value;
-        setSelectedRegionId(newRegionId);
-        // Explicitly reset the history while we wait for the new room's history payload
-        setMetricsHistory([]);
-        setLatestStatus('NORMAL');
-    };
-
     const [tempUnit, setTempUnit] = useState('C'); // 'C' or 'F'
 
     // Format data for Chart.js
@@ -318,8 +310,8 @@ export default function LiveDashboard() {
                         onClick={resetSpike}
                         disabled={!isSpiked}
                         className={`px-6 py-2 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${isSpiked
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 focus:ring-blue-500'
-                                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 focus:ring-blue-500'
+                            : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
                             }`}
                     >
                         Reset Data
