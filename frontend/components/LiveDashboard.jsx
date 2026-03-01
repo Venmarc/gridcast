@@ -134,6 +134,11 @@ export default function LiveDashboard() {
     const options = {
         responsive: true,
         maintainAspectRatio: false,
+        layout: {
+            padding: {
+                bottom: 20
+            }
+        },
         interaction: {
             mode: 'index',
             intersect: false,
