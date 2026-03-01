@@ -99,19 +99,32 @@ export default function LiveDashboard() {
         setLatestStatus('NORMAL');
     };
 
+    const [tempUnit, setTempUnit] = useState('C'); // 'C' or 'F'
+
     // Format data for Chart.js
     const labels = metricsHistory.map((d) => {
         const date = new Date(d.timestamp);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     });
 
+    const getTemperatureData = () => {
+        return metricsHistory.map((d) => {
+            if (tempUnit === 'F') {
+                return (d.weather.temperature * 9 / 5) + 32;
+            }
+            return d.weather.temperature;
+        });
+    };
+
+    const tempLabel = tempUnit === 'C' ? 'Temperature (°C)' : 'Temperature (°F)';
+
     const chartData = {
         labels,
         datasets: [
             {
                 type: 'line',
-                label: 'Temperature (°C)',
-                data: metricsHistory.map((d) => d.weather.temperature),
+                label: tempLabel,
+                data: getTemperatureData(),
                 borderColor: 'rgb(255, 99, 132)',
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
                 yAxisID: 'y',
@@ -166,7 +179,7 @@ export default function LiveDashboard() {
                 position: 'left',
                 title: {
                     display: true,
-                    text: 'Temperature (°C)',
+                    text: tempLabel,
                     color: 'rgb(255, 99, 132)'
                 },
                 ticks: { color: 'rgb(255, 99, 132)' },
@@ -256,7 +269,23 @@ export default function LiveDashboard() {
             </div>
 
             {/* Controls */}
-            <div className="p-4 bg-slate-800/50 border-t border-slate-700/50 flex justify-end">
+            <div className="p-4 bg-slate-800/50 border-t border-slate-700/50 flex flex-col md:flex-row justify-between items-center gap-4">
+
+                <div className="flex bg-slate-900 border border-slate-600 rounded-lg p-1">
+                    <button
+                        onClick={() => setTempUnit('C')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200 ${tempUnit === 'C' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        °C
+                    </button>
+                    <button
+                        onClick={() => setTempUnit('F')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-200 ${tempUnit === 'F' ? 'bg-blue-500 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+                    >
+                        °F
+                    </button>
+                </div>
+
                 <button
                     onClick={simulateSpike}
                     className="px-6 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-medium rounded-lg transition-colors shadow-lg shadow-rose-500/20 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:ring-offset-slate-900"
