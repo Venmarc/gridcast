@@ -221,7 +221,7 @@ export default function LiveDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-b border-slate-700/50 gap-4">
                 <div>
                     <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-                        Multi-Region Visualized API
+                        Multi-Region Visualized Data
                     </h2>
                     <p className="text-slate-400 text-sm mt-1">Real-time weather vs energy correlation across the US</p>
                 </div>
