@@ -4,7 +4,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50 p-6 md:p-12 font-sans selection:bg-blue-500/30">
 
-      <div className="max-w-7xl mx-auto space-y-8 pb-12">
+      <div className="max-w-7xl mx-auto space-y-8 pb-12 flex flex-col min-h-[90vh]">
 
         <header className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
@@ -15,9 +15,23 @@ export default function Home() {
           </p>
         </header>
 
-        <section className="h-[85vh] min-h-[600px] w-full mb-12">
+        <section className="flex-1 w-full mb-12">
           <LiveDashboard />
         </section>
+
+        <footer className="w-full flex flex-col md:flex-row items-center justify-between border-t border-slate-800 pt-6 text-slate-400 text-sm gap-4">
+          <p>Copyright © GridCast 2026. All rights reserved.</p>
+          <a
+            href="mailto:venmarc@protonmail.com?subject=Inquiry from GridCast"
+            className="flex items-center gap-2 hover:text-blue-400 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/-2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            Email Us
+          </a>
+        </footer>
 
       </div>
 
