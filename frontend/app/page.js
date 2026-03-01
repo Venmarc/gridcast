@@ -15,7 +15,7 @@ export default function Home() {
           </p>
         </header>
 
-        <section className="h-[75vh] w-full mb-12">
+        <section className="h-[85vh] min-h-[600px] w-full mb-12">
           <LiveDashboard />
         </section>
 

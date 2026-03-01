@@ -244,7 +244,7 @@ export default function LiveDashboard() {
             </div>
 
             {/* Chart Container */}
-            <div className="flex-1 p-6 min-h-[400px]">
+            <div className="flex-1 p-6 min-h-[500px]">
                 {metricsHistory.length > 0 ? (
                     <Line options={options} data={chartData} />
                 ) : (
