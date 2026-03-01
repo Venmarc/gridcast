@@ -54,7 +54,7 @@ async function fetchRegionData(regionId) {
         if (eiaJson && eiaJson.response && eiaJson.response.data) {
             const validData = eiaJson.response.data.find(d => d.value !== null && d.value !== undefined);
             if (validData) {
-                newRealData.demandMW = validData.value;
+                newRealData.demandMW = Number(validData.value);
                 console.log(`[${regionId}] EIA Grid Demand updated: ${newRealData.demandMW} MW`);
             }
         }
