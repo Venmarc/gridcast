@@ -200,6 +200,8 @@ export default function LiveDashboard() {
         },
     };
 
+    const [isSpiked, setIsSpiked] = useState(false);
+
     const simulateSpike = async () => {
         try {
             await fetch('http://localhost:4000/api/simulate-spike', {
@@ -209,9 +211,34 @@ export default function LiveDashboard() {
                 },
                 body: JSON.stringify({ regionId: selectedRegionId })
             });
+            setIsSpiked(true);
         } catch (err) {
             console.error('Failed to simulate spike:', err);
         }
+    };
+
+    const resetSpike = async () => {
+        try {
+            await fetch('http://localhost:4000/api/reset-spike', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ regionId: selectedRegionId })
+            });
+            setIsSpiked(false);
+        } catch (err) {
+            console.error('Failed to reset spike:', err);
+        }
+    };
+
+    // Update handleRegionChange to reset isSpiked state
+    const handleRegionChange = (e) => {
+        const newRegionId = e.target.value;
+        setSelectedRegionId(newRegionId);
+        setMetricsHistory([]);
+        setLatestStatus('NORMAL');
+        setIsSpiked(false); // Clear spike state when jumping to a new region
     };
 
     return (
@@ -286,12 +313,25 @@ export default function LiveDashboard() {
                     </button>
                 </div>
 
-                <button
-                    onClick={simulateSpike}
-                    className="px-6 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-medium rounded-lg transition-colors shadow-lg shadow-rose-500/20 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-                >
-                    Simulate Spike ({selectedRegionId})
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={resetSpike}
+                        disabled={!isSpiked}
+                        className={`px-6 py-2 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${isSpiked
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 focus:ring-blue-500'
+                                : 'bg-slate-700 text-slate-400 cursor-not-allowed opacity-50'
+                            }`}
+                    >
+                        Reset Data
+                    </button>
+
+                    <button
+                        onClick={simulateSpike}
+                        className="px-6 py-2 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white font-medium rounded-lg transition-colors shadow-lg shadow-rose-500/20 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                    >
+                        Simulate Spike ({selectedRegionId})
+                    </button>
+                </div>
             </div>
         </div>
     );

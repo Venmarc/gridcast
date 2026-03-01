@@ -135,6 +135,19 @@ function simulateSpike(regionId) {
     return generateLiveData(regionId);
 }
 
+/**
+ * Resets a region's simulated heat spike back to its real baseline.
+ */
+function resetSpike(regionId) {
+    const registry = realDataRegistry[regionId];
+    if (registry) {
+        // Snap back to true API values
+        registry.currentTemp = registry.temperature;
+        registry.currentDemand = registry.demandMW;
+    }
+    return generateLiveData(regionId);
+}
+
 // Initial fetch and scheduled interval mapping (every 15 minutes)
 fetchAllRegions();
 setInterval(fetchAllRegions, 15 * 60 * 1000);
@@ -143,5 +156,6 @@ module.exports = {
     regionMapping,
     regionCache,
     generateLiveData,
-    simulateSpike
+    simulateSpike,
+    resetSpike
 };

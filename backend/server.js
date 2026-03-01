@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const { regionMapping, regionCache, generateLiveData, simulateSpike } = require('./services/apiService');
+const { regionMapping, regionCache, generateLiveData, simulateSpike, resetSpike } = require('./services/apiService');
 
 const app = express();
 app.use(cors());
@@ -45,6 +45,18 @@ app.post('/api/simulate-spike', (req, res) => {
     io.to(regionId).emit('grid_update', data);
 
     res.json({ message: 'Spike simulated', data });
+});
+
+// Endpoint to snap simulated data back to the true API baseline
+app.post('/api/reset-spike', (req, res) => {
+    const { regionId } = req.body;
+    if (!regionId || !regionMapping[regionId]) {
+        return res.status(400).json({ error: "Invalid region ID" });
+    }
+
+    const data = resetSpike(regionId);
+    io.to(regionId).emit('grid_update', data);
+    res.json({ message: 'Spike reset', data });
 });
 
 // Polling and WebSocket broadcasting loop
