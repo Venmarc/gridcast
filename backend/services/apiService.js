@@ -33,7 +33,7 @@ async function fetchRegionData(regionId) {
     try {
         const fetchPromises = [
             // EIA API fetching
-            eiaApiKey ? fetch(`https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?frequency=hourly&data[0]=value&facets[subba][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1&api_key=${eiaApiKey}`).then(r => r.json()) : Promise.resolve(null),
+            eiaApiKey ? fetch(`https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?frequency=hourly&data[0]=value&facets[subba][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5&api_key=${eiaApiKey}`).then(r => r.json()) : Promise.resolve(null),
 
             // OpenWeather API fetching
             weatherApiKey ? fetch(`https://api.openweathermap.org/data/2.5/weather?q=${region.weatherCity}&appid=${weatherApiKey}&units=metric`).then(r => r.json()) : Promise.resolve(null)
@@ -51,9 +51,12 @@ async function fetchRegionData(regionId) {
         }
 
         // Process EIA
-        if (eiaJson && eiaJson.response && eiaJson.response.data && eiaJson.response.data.length > 0) {
-            newRealData.demandMW = eiaJson.response.data[0].value;
-            console.log(`[${regionId}] EIA Grid Demand updated: ${newRealData.demandMW} MW`);
+        if (eiaJson && eiaJson.response && eiaJson.response.data) {
+            const validData = eiaJson.response.data.find(d => d.value !== null && d.value !== undefined);
+            if (validData) {
+                newRealData.demandMW = validData.value;
+                console.log(`[${regionId}] EIA Grid Demand updated: ${newRealData.demandMW} MW`);
+            }
         }
 
         // Snap the current simulation anchors directly to the new real data
