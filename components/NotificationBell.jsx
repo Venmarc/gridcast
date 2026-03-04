@@ -46,48 +46,53 @@ export default function NotificationBell({ alerts, onAlertClick, isOpen, setIsOp
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-3 w-80 lg:w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-xl">
-                    <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-                        <h4 className="font-semibold text-slate-200">Recent Alerts (Last Hour)</h4>
-                        <span className="text-xs text-slate-500">{recentAlerts.length} total</span>
-                    </div>
+                <div className="absolute right-0 mt-3 z-50">
+                    {/* Upward Pointy Arrow */}
+                    <div className="absolute -top-[6.5px] right-[14px] w-3.5 h-3.5 bg-slate-900 border-t border-l border-slate-700 transform rotate-45 z-0"></div>
 
-                    <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
-                        {recentAlerts.length === 0 ? (
-                            <div className="p-6 text-center text-slate-500 text-sm">
-                                <p>System stable.</p>
-                                <p>No anomalies detected in the past hour.</p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col">
-                                {recentAlerts.map((alert) => (
-                                    <div
-                                        key={alert.id}
-                                        onClick={() => {
-                                            onAlertClick(alert.regionId);
-                                            setIsOpen(false);
-                                        }}
-                                        className={`p-4 border-b border-slate-800/50 cursor-pointer transition-colors hover:bg-slate-800 flex flex-col gap-1 ${alert.type === 'GRID'
-                                            ? 'border-l-4 border-l-amber-500'
-                                            : 'border-l-4 border-l-blue-500'
-                                            }`}
-                                    >
-                                        <div className="flex justify-between items-center text-xs text-slate-400 font-mono">
-                                            <span className={`font-bold ${alert.type === 'GRID' ? 'text-amber-400' : 'text-blue-400'}`}>
-                                                [{alert.type}] {alert.regionId}
-                                            </span>
-                                            <span>{new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    {/* Main Menu Box */}
+                    <div className="relative z-10 w-80 lg:w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                        <div className="p-3 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
+                            <h4 className="font-semibold text-slate-200">Recent Alerts (Last Hour)</h4>
+                            <span className="text-xs text-slate-500">{recentAlerts.length} total</span>
+                        </div>
+
+                        <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+                            {recentAlerts.length === 0 ? (
+                                <div className="p-6 text-center text-slate-500 text-sm">
+                                    <p>System stable.</p>
+                                    <p>No anomalies detected in the past hour.</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col">
+                                    {recentAlerts.map((alert) => (
+                                        <div
+                                            key={alert.id}
+                                            onClick={() => {
+                                                onAlertClick(alert.regionId);
+                                                setIsOpen(false);
+                                            }}
+                                            className={`p-4 border-b border-slate-800/50 cursor-pointer transition-colors hover:bg-slate-800 flex flex-col gap-1 ${alert.type === 'GRID'
+                                                ? 'border-l-4 border-l-amber-500'
+                                                : 'border-l-4 border-l-blue-500'
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-center text-xs text-slate-400 font-mono">
+                                                <span className={`font-bold ${alert.type === 'GRID' ? 'text-amber-400' : 'text-blue-400'}`}>
+                                                    [{alert.type}] {alert.regionId}
+                                                </span>
+                                                <span>{new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                            <p className="text-slate-300 text-sm mt-1">
+                                                {alert.message}
+                                            </p>
                                         </div>
-                                        <p className="text-slate-300 text-sm mt-1">
-                                            {alert.message}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
             )}
-        </div>
-    );
+                </div>
+            );
 }
