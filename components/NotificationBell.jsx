@@ -92,7 +92,8 @@ export default function NotificationBell({ alerts, onAlertClick, isOpen, setIsOp
                             )}
                         </div>
                     </div>
-            )}
                 </div>
-            );
+            )}
+        </div>
+    );
 }
