@@ -11,6 +11,8 @@ import {
     Title,
     Tooltip,
     Legend,
+    BarController,
+    LineController
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
@@ -22,7 +24,9 @@ ChartJS.register(
     BarElement,
     Title,
     Tooltip,
-    Legend
+    Legend,
+    BarController,
+    LineController
 );
 
 export default function LiveDashboard() {
