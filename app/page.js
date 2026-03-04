@@ -1,4 +1,5 @@
 import LiveDashboard from '@/components/LiveDashboard';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -7,7 +8,8 @@ export default function Home() {
       <div className="max-w-7xl mx-auto space-y-8 pb-12 flex flex-col min-h-[90vh]">
 
         <header className="space-y-2">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight flex items-center gap-3">
+            <Image src="/icon.svg" alt="GridCast Logo" width={48} height={48} className="drop-shadow-sm" />
             <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">GridCast</span>
           </h1>
           <p className="text-lg text-slate-400 max-w-2xl leading-relaxed">
