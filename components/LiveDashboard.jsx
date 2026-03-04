@@ -15,6 +15,7 @@ import {
     LineController
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import AlertFeed from './AlertFeed';
 
 ChartJS.register(
     CategoryScale,
@@ -33,6 +34,10 @@ export default function LiveDashboard() {
     const [metricsHistory, setMetricsHistory] = useState([]);
     const [latestStatus, setLatestStatus] = useState('NORMAL');
     const [isConnected, setIsConnected] = useState(false);
+
+    // Anomaly Detection State
+    const [alerts, setAlerts] = useState([]);
+    const [baseline, setBaseline] = useState({ tempF: null, demandMW: null });
 
     const [regions, setRegions] = useState([]);
     const [selectedRegionId, setSelectedRegionId] = useState('COAS');
@@ -66,7 +71,14 @@ export default function LiveDashboard() {
                 if (!Array.isArray(historyData)) return;
                 setMetricsHistory(historyData);
                 if (historyData.length > 0) {
-                    setLatestStatus(historyData[historyData.length - 1].grid.status);
+                    const lastData = historyData[historyData.length - 1];
+                    setLatestStatus(lastData.grid.status);
+
+                    // Set initial baseline for anomaly detection
+                    setBaseline({
+                        tempF: (lastData.weather.temperature * 9 / 5) + 32,
+                        demandMW: lastData.grid.demandMW
+                    });
                 } else {
                     setLatestStatus('NORMAL');
                 }
@@ -83,6 +95,49 @@ export default function LiveDashboard() {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+
+                // --- ANOMALY DETECTION LOGIC ---
+                setBaseline(prevBaseline => {
+                    let newBaseline = { ...prevBaseline };
+                    const currentTempF = (data.weather.temperature * 9 / 5) + 32;
+                    const currentDemand = data.grid.demandMW;
+
+                    // Only run detection if we have a baseline established
+                    if (prevBaseline.tempF !== null && prevBaseline.demandMW !== null) {
+                        const tempDiff = currentTempF - prevBaseline.tempF;
+                        const demandDiff = currentDemand - prevBaseline.demandMW;
+
+                        // Check Temperature Threshold (>= 5.0 F difference)
+                        if (Math.abs(tempDiff) >= 5.0) {
+                            setAlerts(prev => [{
+                                id: Date.now() + Math.random(),
+                                timestamp: new Date(),
+                                type: 'TEMP',
+                                message: `Sudden temperature shift detected. Changed by ${tempDiff > 0 ? '+' : ''}${tempDiff.toFixed(1)}°F from baseline.`,
+                                severity: 'info'
+                            }, ...prev]);
+                            newBaseline.tempF = currentTempF; // Update baseline to intercept infinite triggers
+                        }
+
+                        // Check Grid Demand Threshold (>= 200 MW difference)
+                        if (Math.abs(demandDiff) >= 200) {
+                            setAlerts(prev => [{
+                                id: Date.now() + Math.random(),
+                                timestamp: new Date(),
+                                type: 'GRID',
+                                message: `Critical demand fluctuation detected. Load shifted by ${demandDiff > 0 ? '+' : ''}${Math.round(demandDiff)} MW.`,
+                                severity: 'warning'
+                            }, ...prev]);
+                            newBaseline.demandMW = currentDemand; // Update baseline to intercept infinite triggers
+                        }
+                    } else {
+                        // Initialize if it was null
+                        newBaseline = { tempF: currentTempF, demandMW: currentDemand };
+                    }
+                    return newBaseline;
+                });
+                // -------------------------------
+
                 setMetricsHistory((prev) => {
                     const updated = [...prev, data];
                     if (updated.length > 20) {
@@ -249,6 +304,8 @@ export default function LiveDashboard() {
         setSelectedRegionId(newRegionId);
         setMetricsHistory([]);
         setLatestStatus('NORMAL');
+        setAlerts([]); // Clear alerts on region change
+        setBaseline({ tempF: null, demandMW: null });
         setIsSpiked(false); // Clear spike state when jumping to a new region
     };
 
@@ -294,16 +351,26 @@ export default function LiveDashboard() {
                 </div>
             </div>
 
-            {/* Chart Container */}
-            <div className="flex-1 p-6 min-h-[500px]">
-                {metricsHistory.length > 0 ? (
-                    <Line options={options} data={chartData} />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-500 flex-col gap-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                        <span>Fetching data for {selectedRegionName}...</span>
-                    </div>
-                )}
+            {/* Chart and Alert Feed Container */}
+            <div className="flex flex-col lg:flex-row flex-1 p-6 gap-6 min-h-[500px]">
+                {/* Main Graph */}
+                <div className="flex-1 min-w-0">
+                    {metricsHistory.length > 0 ? (
+                        <div className="h-full min-h-[400px]">
+                            <Line options={options} data={chartData} />
+                        </div>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-500 flex-col gap-3 min-h-[400px]">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                            <span>Fetching data for {selectedRegionName}...</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Anomaly Feed Sidebar */}
+                <div className="w-full lg:w-96 flex-shrink-0">
+                    <AlertFeed alerts={alerts} />
+                </div>
             </div>
 
             {/* Controls */}
