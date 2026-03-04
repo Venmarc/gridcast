@@ -229,6 +229,30 @@ export default function LiveDashboard() {
 
     const selectedRegionName = regions.find((r) => r.id === selectedRegionId)?.displayName || 'Loading...';
 
+    const tempData = getTemperatureData();
+
+    // Calculate dynamic temperature axis bounds to make it visually responsive but not erratic.
+    // 7 rows / 1.5 rows per degree C = ~4.66 °C spread.
+    const spreadC = 4.66;
+    const spreadF = spreadC * 1.8;
+
+    let tempMin = tempUnit === 'F' ? 0 : -20;
+    let tempMax = tempUnit === 'F' ? 120 : 50;
+
+    if (baseline.tempF !== null && tempData.length > 0) {
+        const baseTemp = tempUnit === 'C' ? ((baseline.tempF - 32) * 5 / 9) : baseline.tempF;
+        const spread = tempUnit === 'C' ? spreadC : spreadF;
+
+        tempMin = baseTemp - (spread / 2);
+        tempMax = baseTemp + (spread / 2);
+
+        // Expand bounds naturally if there's a huge spike
+        const dataMin = Math.min(...tempData);
+        const dataMax = Math.max(...tempData);
+        if (dataMin < tempMin) tempMin = dataMin - 1;
+        if (dataMax > tempMax) tempMax = dataMax + 1;
+    }
+
     const options = {
         responsive: true,
         maintainAspectRatio: false,
@@ -262,8 +286,8 @@ export default function LiveDashboard() {
                 type: 'linear',
                 display: true,
                 position: 'left',
-                min: tempUnit === 'F' ? 0 : -20,   // Lock bottom temp
-                max: tempUnit === 'F' ? 120 : 50,  // Lock top temp depending on unit
+                min: tempMin,
+                max: tempMax,
                 title: {
                     display: true,
                     text: tempLabel,
@@ -276,8 +300,7 @@ export default function LiveDashboard() {
                 type: 'linear',
                 display: true,
                 position: 'right',
-                min: 0,      // Lock bottom demand to 0 MW
-                max: 15000,  // Lock top demand to 15,000 MW
+                beginAtZero: true,
                 title: {
                     display: true,
                     text: 'Grid Demand (MW)',
@@ -358,8 +381,8 @@ export default function LiveDashboard() {
                         </div>
 
                         <div className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors duration-300 flex items-center gap-2 ${isUnstable
-                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
-                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                             }`}>
                             {!isUnstable && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
                             {isUnstable ? 'SYSTEM ALERT | Grid Fluctuation' : 'Stable | Monitoring data stream'}
