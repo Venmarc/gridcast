@@ -48,7 +48,7 @@ export default function NotificationBell({ alerts, onAlertClick, isOpen, setIsOp
             {isOpen && (
                 <div className="absolute right-0 mt-3 z-50">
                     {/* Upward Pointy Arrow */}
-                    <div className="absolute -top-[6.5px] right-[14px] w-3.5 h-3.5 bg-slate-900 border-t border-l border-slate-700 transform rotate-45 z-0"></div>
+                    <div className="absolute -top-[6.5px] right-[13px] w-3.5 h-3.5 bg-slate-900 border-t border-l border-slate-700 transform rotate-45 z-20"></div>
 
                     {/* Main Menu Box */}
                     <div className="relative z-10 w-80 lg:w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl">
