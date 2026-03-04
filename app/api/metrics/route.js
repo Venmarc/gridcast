@@ -12,5 +12,12 @@ export async function GET(request) {
         return NextResponse.json({ error: "Invalid or missing Region ID" }, { status: 400 });
     }
 
+    // Filter out stale cache entries (e.g. older than 2 minutes)
+    // If a region was not visited recently, its history gets stale and causes a false anomaly jump.
+    const twoMinutesAgo = Date.now() - 2 * 60 * 1000;
+    regionCache[regionId] = regionCache[regionId].filter(
+        data => new Date(data.timestamp).getTime() > twoMinutesAgo
+    );
+
     return NextResponse.json(regionCache[regionId]);
 }
