@@ -4,8 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
  * NotificationBell Component
  * Displays a bell with a badge for alerts from the last hour.
  */
-export default function NotificationBell({ alerts, onAlertClick }) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function NotificationBell({ alerts, onAlertClick, isOpen, setIsOpen }) {
     const dropdownRef = useRef(null);
 
     // Filter alerts from the last hour

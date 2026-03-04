@@ -43,6 +43,13 @@ export default function LiveDashboard() {
     // UI Redesign State
     const [activeAlert, setActiveAlert] = useState(null);
     const [isUnstable, setIsUnstable] = useState(false);
+    const [isBellOpen, setIsBellOpen] = useState(false);
+
+    // Use a ref for the bell state inside the SSE event callback without causing re-renders
+    const isBellOpenRef = useRef(false);
+    useEffect(() => {
+        isBellOpenRef.current = isBellOpen;
+    }, [isBellOpen]);
 
     const [regions, setRegions] = useState([]);
     const [selectedRegionId, setSelectedRegionId] = useState('COAS');
@@ -123,7 +130,7 @@ export default function LiveDashboard() {
                                 severity: 'info'
                             };
                             setAlerts(prev => [newAlert, ...prev]);
-                            setActiveAlert(newAlert);
+                            if (!isBellOpenRef.current) setActiveAlert(newAlert);
                             setIsUnstable(true);
                             // 10 second timeout for the red status pill
                             setTimeout(() => setIsUnstable(false), 10000);
@@ -142,7 +149,7 @@ export default function LiveDashboard() {
                                 severity: 'warning'
                             };
                             setAlerts(prev => [newAlert, ...prev]);
-                            setActiveAlert(newAlert);
+                            if (!isBellOpenRef.current) setActiveAlert(newAlert);
                             setIsUnstable(true);
                             // 10 second timeout for the red status pill
                             setTimeout(() => setIsUnstable(false), 10000);
@@ -354,9 +361,19 @@ export default function LiveDashboard() {
         setSelectedRegionId(idToSet);
         setMetricsHistory([]);
         setLatestStatus('NORMAL');
-        setAlerts([]); // Clear alerts on region change
         setBaseline({ tempF: null, demandMW: null });
         setIsSpiked(false); // Clear spike state when jumping to a new region
+    };
+
+    const handleAlertClick = (regionToVisit) => {
+        // Clear all alerts for this region so they disappear from the bell dropdown
+        setAlerts(prev => prev.filter(a => a.regionId !== regionToVisit));
+        if (activeAlert?.regionId === regionToVisit) setActiveAlert(null);
+
+        // Navigate
+        if (regionToVisit !== selectedRegionId) {
+            handleRegionChange(regionToVisit);
+        }
     };
 
     return (
@@ -389,7 +406,12 @@ export default function LiveDashboard() {
 
                         {/* Notification Bell */}
                         <div className="pl-2 border-l border-slate-700">
-                            <NotificationBell alerts={alerts} onAlertClick={handleRegionChange} />
+                            <NotificationBell
+                                alerts={alerts}
+                                onAlertClick={handleAlertClick}
+                                isOpen={isBellOpen}
+                                setIsOpen={setIsBellOpen}
+                            />
                         </div>
                     </div>
 
@@ -468,7 +490,7 @@ export default function LiveDashboard() {
             <AlertPopup
                 alert={activeAlert}
                 onClose={() => setActiveAlert(null)}
-                onAlertClick={handleRegionChange}
+                onAlertClick={handleAlertClick}
             />
         </div>
     );
