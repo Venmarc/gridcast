@@ -384,7 +384,6 @@ export default function LiveDashboard() {
                             ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
                             : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                             }`}>
-                            {!isUnstable && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
                             {isUnstable ? 'SYSTEM ALERT | Grid Fluctuation' : 'Stable | Monitoring data stream'}
                         </div>
 
