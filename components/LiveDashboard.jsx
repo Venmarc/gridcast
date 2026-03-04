@@ -15,7 +15,8 @@ import {
     LineController
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import AlertFeed from './AlertFeed';
+import AlertPopup from './AlertPopup';
+import NotificationBell from './NotificationBell';
 
 ChartJS.register(
     CategoryScale,
@@ -38,6 +39,10 @@ export default function LiveDashboard() {
     // Anomaly Detection State
     const [alerts, setAlerts] = useState([]);
     const [baseline, setBaseline] = useState({ tempF: null, demandMW: null });
+
+    // UI Redesign State
+    const [activeAlert, setActiveAlert] = useState(null);
+    const [isUnstable, setIsUnstable] = useState(false);
 
     const [regions, setRegions] = useState([]);
     const [selectedRegionId, setSelectedRegionId] = useState('COAS');
@@ -109,27 +114,39 @@ export default function LiveDashboard() {
 
                         // Check Temperature Threshold (>= 5.0 F difference)
                         if (Math.abs(tempDiff) >= 5.0) {
-                            setAlerts(prev => [{
+                            const newAlert = {
                                 id: Date.now() + Math.random(),
                                 timestamp: new Date(),
                                 type: 'TEMP',
                                 regionId: selectedRegionId, // Attach current region
                                 message: `Sudden temperature shift detected. Changed by ${tempDiff > 0 ? '+' : ''}${tempDiff.toFixed(1)}°F from baseline.`,
                                 severity: 'info'
-                            }, ...prev]);
+                            };
+                            setAlerts(prev => [newAlert, ...prev]);
+                            setActiveAlert(newAlert);
+                            setIsUnstable(true);
+                            // 10 second timeout for the red status pill
+                            setTimeout(() => setIsUnstable(false), 10000);
+
                             newBaseline.tempF = currentTempF; // Update baseline to intercept infinite triggers
                         }
 
                         // Check Grid Demand Threshold (>= 200 MW difference)
                         if (Math.abs(demandDiff) >= 200) {
-                            setAlerts(prev => [{
+                            const newAlert = {
                                 id: Date.now() + Math.random(),
                                 timestamp: new Date(),
                                 type: 'GRID',
                                 regionId: selectedRegionId, // Attach current region
                                 message: `Critical demand fluctuation detected. Load shifted by ${demandDiff > 0 ? '+' : ''}${Math.round(demandDiff)} MW.`,
                                 severity: 'warning'
-                            }, ...prev]);
+                            };
+                            setAlerts(prev => [newAlert, ...prev]);
+                            setActiveAlert(newAlert);
+                            setIsUnstable(true);
+                            // 10 second timeout for the red status pill
+                            setTimeout(() => setIsUnstable(false), 10000);
+
                             newBaseline.demandMW = currentDemand; // Update baseline to intercept infinite triggers
                         }
                     } else {
@@ -245,6 +262,8 @@ export default function LiveDashboard() {
                 type: 'linear',
                 display: true,
                 position: 'left',
+                min: tempUnit === 'F' ? 0 : -20,   // Lock bottom temp
+                max: tempUnit === 'F' ? 120 : 50,  // Lock top temp depending on unit
                 title: {
                     display: true,
                     text: tempLabel,
@@ -257,6 +276,8 @@ export default function LiveDashboard() {
                 type: 'linear',
                 display: true,
                 position: 'right',
+                min: 0,      // Lock bottom demand to 0 MW
+                max: 15000,  // Lock top demand to 15,000 MW
                 title: {
                     display: true,
                     text: 'Grid Demand (MW)',
@@ -332,13 +353,21 @@ export default function LiveDashboard() {
                         <div className="flex items-center space-x-2">
                             <span className={`h-3 w-3 rounded-full ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
                             <span className="text-sm font-medium text-slate-300 hidden md:inline">
-                                {isConnected ? 'Live Stream Connected' : 'Disconnected'}
+                                {isConnected ? 'Connected' : 'Disconnected'}
                             </span>
                         </div>
 
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${latestStatus === 'WARNING' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                        <div className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors duration-300 flex items-center gap-2 ${isUnstable
+                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                             }`}>
-                            GRID: {latestStatus}
+                            {!isUnstable && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
+                            {isUnstable ? 'SYSTEM ALERT | Grid Fluctuation' : 'Stable | Monitoring data stream'}
+                        </div>
+
+                        {/* Notification Bell */}
+                        <div className="pl-2 border-l border-slate-700">
+                            <NotificationBell alerts={alerts} onAlertClick={handleRegionChange} />
                         </div>
                     </div>
 
@@ -357,12 +386,12 @@ export default function LiveDashboard() {
                 </div>
             </div>
 
-            {/* Chart and Alert Feed Container */}
-            <div className="flex flex-col lg:flex-row flex-1 p-6 gap-6 min-h-[500px]">
+            {/* Chart Container */}
+            <div className="flex flex-col flex-1 p-6 min-h-[500px]">
                 {/* Main Graph */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 w-full relative">
                     {metricsHistory.length > 0 ? (
-                        <div className="h-full min-h-[400px]">
+                        <div className="absolute inset-0">
                             <Line options={options} data={chartData} />
                         </div>
                     ) : (
@@ -371,11 +400,6 @@ export default function LiveDashboard() {
                             <span>Fetching data for {selectedRegionName}...</span>
                         </div>
                     )}
-                </div>
-
-                {/* Anomaly Feed Sidebar */}
-                <div className="w-full lg:w-96 flex-shrink-0">
-                    <AlertFeed alerts={alerts} onAlertClick={handleRegionChange} />
                 </div>
             </div>
 
@@ -417,6 +441,13 @@ export default function LiveDashboard() {
                     </button>
                 </div>
             </div>
+
+            {/* Pop-up Alert Toast */}
+            <AlertPopup
+                alert={activeAlert}
+                onClose={() => setActiveAlert(null)}
+                onAlertClick={handleRegionChange}
+            />
         </div>
     );
 }
