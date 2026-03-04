@@ -56,7 +56,6 @@ export default function NotificationBell({ alerts, onAlertClick }) {
                     <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
                         {recentAlerts.length === 0 ? (
                             <div className="p-6 text-center text-slate-500 text-sm">
-                                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 mb-2"></span>
                                 <p>System stable.</p>
                                 <p>No anomalies detected in the past hour.</p>
                             </div>
@@ -70,8 +69,8 @@ export default function NotificationBell({ alerts, onAlertClick }) {
                                             setIsOpen(false);
                                         }}
                                         className={`p-4 border-b border-slate-800/50 cursor-pointer transition-colors hover:bg-slate-800 flex flex-col gap-1 ${alert.type === 'GRID'
-                                                ? 'border-l-4 border-l-amber-500'
-                                                : 'border-l-4 border-l-blue-500'
+                                            ? 'border-l-4 border-l-amber-500'
+                                            : 'border-l-4 border-l-blue-500'
                                             }`}
                                     >
                                         <div className="flex justify-between items-center text-xs text-slate-400 font-mono">
