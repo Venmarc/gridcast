@@ -4,9 +4,10 @@ import React from 'react';
  * AlertFeed Component
  * Displays a terminal-style scrolling list of real-time anomalies.
  * 
- * @param {Array} alerts - Array of alert objects: { id, timestamp, type ('GRID' | 'TEMP'), message, severity }
+ * @param {Array} alerts - Array of alert objects: { id, timestamp, type ('GRID' | 'TEMP'), message, severity, regionId }
+ * @param {Function} onAlertClick - Function to handle jumping to the alert's region
  */
-export default function AlertFeed({ alerts }) {
+export default function AlertFeed({ alerts, onAlertClick }) {
     return (
         <div className="flex flex-col h-full bg-slate-900 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-md overflow-hidden">
             <div className="p-4 border-b border-slate-700/50 flex items-center justify-between bg-slate-800/50">
@@ -33,14 +34,15 @@ export default function AlertFeed({ alerts }) {
                     alerts.map((alert) => (
                         <div
                             key={alert.id}
-                            className={`p-3 rounded-lg border flex flex-col gap-1 transition-all ${alert.type === 'GRID'
-                                    ? 'bg-amber-950/20 border-amber-500/30 text-amber-400'
-                                    : 'bg-blue-950/20 border-blue-500/30 text-blue-400'
+                            onClick={() => onAlertClick(alert.regionId)}
+                            className={`p-3 rounded-lg border flex flex-col gap-1 transition-all cursor-pointer hover:scale-[1.02] hover:shadow-lg ${alert.type === 'GRID'
+                                    ? 'bg-amber-950/20 border-amber-500/30 text-amber-400 hover:bg-amber-900/40 hover:border-amber-500/50'
+                                    : 'bg-blue-950/20 border-blue-500/30 text-blue-400 hover:bg-blue-900/40 hover:border-blue-500/50'
                                 }`}
                         >
                             <div className="flex justify-between items-start">
                                 <span className="font-bold tracking-wider text-xs opacity-90">
-                                    [{alert.type} ANOMALY]
+                                    [{alert.type} ANOMALY] - {alert.regionId}
                                 </span>
                                 <span className="text-xs text-slate-500">
                                     {new Date(alert.timestamp).toLocaleTimeString()}

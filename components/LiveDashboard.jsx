@@ -113,6 +113,7 @@ export default function LiveDashboard() {
                                 id: Date.now() + Math.random(),
                                 timestamp: new Date(),
                                 type: 'TEMP',
+                                regionId: selectedRegionId, // Attach current region
                                 message: `Sudden temperature shift detected. Changed by ${tempDiff > 0 ? '+' : ''}${tempDiff.toFixed(1)}°F from baseline.`,
                                 severity: 'info'
                             }, ...prev]);
@@ -125,6 +126,7 @@ export default function LiveDashboard() {
                                 id: Date.now() + Math.random(),
                                 timestamp: new Date(),
                                 type: 'GRID',
+                                regionId: selectedRegionId, // Attach current region
                                 message: `Critical demand fluctuation detected. Load shifted by ${demandDiff > 0 ? '+' : ''}${Math.round(demandDiff)} MW.`,
                                 severity: 'warning'
                             }, ...prev]);
@@ -299,9 +301,13 @@ export default function LiveDashboard() {
     };
 
     // Update handleRegionChange to reset isSpiked state
-    const handleRegionChange = (e) => {
-        const newRegionId = e.target.value;
-        setSelectedRegionId(newRegionId);
+    const handleRegionChange = (newRegionId) => {
+        // If it's from the select synthetic event, extract value. Otherwise take direct id.
+        const idToSet = newRegionId?.target?.value || newRegionId;
+
+        if (idToSet === selectedRegionId) return; // Ignore if already there
+
+        setSelectedRegionId(idToSet);
         setMetricsHistory([]);
         setLatestStatus('NORMAL');
         setAlerts([]); // Clear alerts on region change
@@ -369,7 +375,7 @@ export default function LiveDashboard() {
 
                 {/* Anomaly Feed Sidebar */}
                 <div className="w-full lg:w-96 flex-shrink-0">
-                    <AlertFeed alerts={alerts} />
+                    <AlertFeed alerts={alerts} onAlertClick={handleRegionChange} />
                 </div>
             </div>
 
