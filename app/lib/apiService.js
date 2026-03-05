@@ -16,7 +16,8 @@ if (!globalMemory.regionCache) {
             humidity: 50,
             demandMW: 5000,
             currentTemp: 25,
-            currentDemand: 5000
+            currentDemand: 5000,
+            hasRealData: false
         };
     }
 }
@@ -56,6 +57,7 @@ export async function fetchRegionData(regionId) {
 
         newRealData.currentTemp = newRealData.temperature;
         newRealData.currentDemand = newRealData.demandMW;
+        newRealData.hasRealData = true;
 
         realDataRegistry[regionId] = newRealData;
 
@@ -78,7 +80,7 @@ export async function ensureDataFetched() {
 
 export function generateLiveData(regionId) {
     const registry = realDataRegistry[regionId];
-    if (!registry) return null;
+    if (!registry || !registry.hasRealData) return null;
 
     registry.currentTemp += (registry.temperature - registry.currentTemp) * 0.1 + (Math.random() - 0.5) * 0.1;
     registry.currentDemand += (registry.demandMW - registry.currentDemand) * 0.1 + (Math.random() - 0.5) * 5;
