@@ -17,6 +17,7 @@ import {
 import { Line } from 'react-chartjs-2';
 import AlertPopup from './AlertPopup';
 import NotificationBell from './NotificationBell';
+import RegionDropdown from './RegionDropdown';
 
 ChartJS.register(
     CategoryScale,
@@ -415,18 +416,11 @@ export default function LiveDashboard() {
                         </div>
                     </div>
 
-                    <select
-                        value={selectedRegionId}
-                        onChange={handleRegionChange}
-                        className="bg-slate-800 border border-slate-600 text-slate-200 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full md:w-auto p-2 outline-none appearance-none cursor-pointer hover:bg-slate-700 transition"
-                    >
-                        {regions.map((r) => (
-                            <option key={r.id} value={r.id} title={`Mapped to ${r.weatherCity}`}>
-                                {r.displayName} [{r.weatherCity.replace(',US', '')}]
-                            </option>
-                        ))}
-                        {regions.length === 0 && <option value="COAS">Loading regions...</option>}
-                    </select>
+                    <RegionDropdown
+                        regions={regions}
+                        selectedRegionId={selectedRegionId}
+                        onRegionChange={handleRegionChange}
+                    />
                 </div>
             </div>
 
