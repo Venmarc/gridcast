@@ -15,6 +15,7 @@ import {
     LineController
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { createPortal } from 'react-dom';
 import AlertPopup from './AlertPopup';
 import NotificationBell from './NotificationBell';
 import RegionDropdown from './RegionDropdown';
@@ -55,6 +56,9 @@ export default function LiveDashboard() {
     const [regions, setRegions] = useState([]);
     const [selectedRegionId, setSelectedRegionId] = useState('COAS');
     const socketRef = useRef(null);
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     // Fetch Available Regions
     useEffect(() => {
@@ -405,15 +409,16 @@ export default function LiveDashboard() {
                             {isUnstable ? 'SYSTEM ALERT | Grid Fluctuation' : 'Stable | Monitoring data stream'}
                         </div>
 
-                        {/* Notification Bell */}
-                        <div className="pl-2 border-l border-slate-700">
+                        {/* Notification Bell Teleported to Header */}
+                        {mounted && document.getElementById('header-bell-portal') && createPortal(
                             <NotificationBell
                                 alerts={alerts}
                                 onAlertClick={handleAlertClick}
                                 isOpen={isBellOpen}
                                 setIsOpen={setIsBellOpen}
-                            />
-                        </div>
+                            />,
+                            document.getElementById('header-bell-portal')
+                        )}
                     </div>
 
                     <RegionDropdown

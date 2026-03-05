@@ -7,30 +7,44 @@ export default function Home() {
 
       <div className="max-w-7xl mx-auto space-y-8 pb-12 flex flex-col min-h-[90vh]">
 
-        <header className="space-y-2">
-          <h1 className="group cursor-pointer w-fit text-4xl md:text-5xl font-extrabold tracking-tight flex items-center gap-3">
+        <header className="flex items-center justify-between pt-6 pb-6 top-0 z-50 sticky bg-slate-950/90 backdrop-blur-md border-b border-transparent transition-all">
+          <div className="group cursor-pointer w-fit text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-3">
             <Image
               src="/icon.svg"
               alt="GridCast Logo"
-              width={48}
-              height={48}
+              width={40}
+              height={40}
               className="rounded-xl drop-shadow-sm transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] group-hover:-translate-y-1"
             />
             <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.2)]">
               GridCast
             </span>
-          </h1>
-          <p className="text-lg text-slate-400 max-w-3xl leading-relaxed mt-4">
-            Welcome to <strong className="text-slate-200 font-semibold">GridCast</strong>, a real-time command center built to analyze the intricate relationship between local weather patterns and high-voltage grid demand. By synthesizing live telemetry across major US energy regions, GridCast provides instantaneous visibility into how environmental stressors impact power consumption at scale.
-          </p>
+          </div>
+
+          <div className="flex items-center gap-4 md:gap-8">
+            <nav className="hidden md:flex items-center gap-6 text-sm md:text-base font-medium text-slate-300">
+              <a href="#about" className="hover:text-blue-400 transition-colors">About</a>
+              <a href="#contact" className="hover:text-blue-400 transition-colors">Contact</a>
+            </nav>
+            <div id="header-bell-portal" className="flex items-center justify-center pl-0 md:pl-4 md:border-l border-slate-700/50"></div>
+          </div>
         </header>
+
+        <section className="pb-10 pt-4 md:pt-8 w-full">
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-slate-50 max-w-5xl leading-[1.05]">
+            Visualizing the Impact of Weather on the <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Power Grid.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-slate-400 max-w-3xl leading-relaxed mt-6 font-medium">
+            A high-performance command center analyzing live telemetry across major US energy regions. Monitor environmental stressors and power consumption in real-time.
+          </p>
+        </section>
 
         <section className="flex-1 w-full mb-12">
           <LiveDashboard />
         </section>
 
         {/* Architecture Details Box */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12 border-b border-slate-800/80">
+        <section id="about" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12 border-b border-slate-800/80 pt-8 mt-4 scroll-mt-24">
           <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl flex flex-col gap-3 shadow-lg">
             <h3 className="text-slate-200 font-bold tracking-tight flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,7 +94,7 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="w-full flex flex-col md:flex-row items-center justify-between border-t border-slate-800 pt-6 text-slate-400 text-sm gap-4">
+        <footer id="contact" className="w-full flex flex-col md:flex-row items-center justify-between border-t border-slate-800 pt-6 text-slate-400 text-sm gap-4 scroll-mt-24">
           <p>Copyright © GridCast 2026. All rights reserved.</p>
           <a
             href="mailto:venmarc@protonmail.com?subject=Inquiry from GridCast"
