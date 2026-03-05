@@ -16,7 +16,7 @@ export default function Home() {
               height={48}
               className="rounded-xl drop-shadow-sm transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.6)] group-hover:-translate-y-1"
             />
-            <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.6)]">
+            <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.2)]">
               GridCast
             </span>
           </h1>
