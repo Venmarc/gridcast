@@ -58,11 +58,17 @@ export default function LiveDashboard() {
     const socketRef = useRef(null);
 
     // Responsive Data Points State
-    const [visiblePoints, setVisiblePoints] = useState(15);
+    const [visiblePoints, setVisiblePoints] = useState(20);
     const [isAutoMode, setIsAutoMode] = useState(true);
     const chartContainerRef = useRef(null);
     const [isPointsOpen, setIsPointsOpen] = useState(false);
     const pointsDropdownRef = useRef(null);
+
+    const isAutoModeRef = useRef(isAutoMode);
+    useEffect(() => {
+        isAutoModeRef.current = isAutoMode;
+    }, [isAutoMode]);
+    const lastWidthRef = useRef(null);
 
     // Close points dropdown when clicking outside
     useEffect(() => {
@@ -80,7 +86,7 @@ export default function LiveDashboard() {
 
     // Smart Data Points Resize Detection
     useEffect(() => {
-        if (!isAutoMode || !chartContainerRef.current) return;
+        if (!chartContainerRef.current) return;
 
         let timeoutId = null;
         const observer = new ResizeObserver((entries) => {
@@ -88,10 +94,21 @@ export default function LiveDashboard() {
                 clearTimeout(timeoutId);
                 timeoutId = setTimeout(() => {
                     const width = entry.contentRect.width;
-                    if (width < 480) setVisiblePoints(8);
-                    else if (width < 640) setVisiblePoints(10);
-                    else if (width < 1024) setVisiblePoints(15);
-                    else setVisiblePoints(20);
+
+                    if (!isAutoModeRef.current) {
+                        // Check if resized significantly (e.g., > 150px) to re-enable Auto
+                        if (lastWidthRef.current && Math.abs(width - lastWidthRef.current) > 150) {
+                            setIsAutoMode(true);
+                            isAutoModeRef.current = true;
+                        }
+                    }
+                    lastWidthRef.current = width;
+
+                    if (isAutoModeRef.current) {
+                        if (width < 480) setVisiblePoints(8);
+                        else if (width < 768) setVisiblePoints(15);
+                        else setVisiblePoints(20);
+                    }
                 }, 150);
             }
         });
@@ -101,7 +118,7 @@ export default function LiveDashboard() {
             clearTimeout(timeoutId);
             observer.disconnect();
         };
-    }, [isAutoMode]);
+    }, []);
 
     // Fetch Available Regions
     useEffect(() => {
@@ -270,9 +287,10 @@ export default function LiveDashboard() {
                 borderColor: 'rgb(255, 99, 132)',
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
                 yAxisID: 'y',
-                tension: 0.3,
+                tension: 0.3, // Keep the curve smooth but sensitive
                 borderWidth: 3,
-                pointRadius: 4,
+                pointRadius: visiblePoints <= 10 ? 5 : 3, // Larger points when focused
+                pointHoverRadius: visiblePoints <= 10 ? 7 : 5,
             },
             {
                 type: 'bar',
@@ -288,26 +306,22 @@ export default function LiveDashboard() {
 
     const tempData = getTemperatureData();
 
-    // Calculate dynamic temperature axis bounds to make it visually responsive but not erratic.
-    // 7 rows / 1.5 rows per degree C = ~4.66 °C spread.
-    const spreadC = 4.66;
-    const spreadF = spreadC * 1.8;
-
     let tempMin = tempUnit === 'F' ? 0 : -20;
     let tempMax = tempUnit === 'F' ? 120 : 50;
 
-    if (baseline.tempF !== null && tempData.length > 0) {
-        const baseTemp = tempUnit === 'C' ? ((baseline.tempF - 32) * 5 / 9) : baseline.tempF;
-        const spread = tempUnit === 'C' ? spreadC : spreadF;
-
-        tempMin = baseTemp - (spread / 2);
-        tempMax = baseTemp + (spread / 2);
-
-        // Expand bounds naturally if there's a huge spike
+    if (tempData.length > 0) {
+        // Dynamic Y-axis domain based on the *current* displayData
         const dataMin = Math.min(...tempData);
         const dataMax = Math.max(...tempData);
-        if (dataMin < tempMin) tempMin = dataMin - 1;
-        if (dataMax > tempMax) tempMax = dataMax + 1;
+        let range = dataMax - dataMin;
+
+        // Give it a minimum range if temperature is perfectly stable
+        if (range < 0.5) range = 0.5;
+
+        // Add 10% padding so the line doesn't scrape the very top/bottom of the chart
+        const padding = range * 0.1;
+        tempMin = dataMin - padding;
+        tempMax = dataMax + padding;
     }
 
     const options = {
@@ -350,7 +364,7 @@ export default function LiveDashboard() {
                     text: tempLabel,
                     color: 'rgb(255, 99, 132)'
                 },
-                ticks: { color: 'rgb(255, 99, 132)' },
+                ticks: { color: 'rgb(255, 99, 132)', maxTicksLimit: 6 },
                 grid: { color: 'rgba(255, 99, 132, 0.1)' }
             },
             y1: {
@@ -475,10 +489,10 @@ export default function LiveDashboard() {
                             >
                                 <div className="flex flex-col items-start truncate pr-2">
                                     <span className="font-semibold truncate">
-                                        Data points
+                                        Show
                                     </span>
                                     <span className="text-xs text-slate-400 truncate">
-                                        [Last {visiblePoints} points]
+                                        [{isAutoMode ? 'Auto' : `Last ${visiblePoints}`}]
                                     </span>
                                 </div>
                                 <svg
@@ -492,6 +506,20 @@ export default function LiveDashboard() {
                             {isPointsOpen && (
                                 <div className="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl">
                                     <ul className="max-h-80 overflow-y-auto custom-scrollbar py-1">
+                                        <li
+                                            onClick={() => {
+                                                setIsAutoMode(true);
+                                                setIsPointsOpen(false);
+                                            }}
+                                            className={`px-4 py-2.5 cursor-pointer flex flex-col items-start transition-colors duration-150 ${isAutoMode
+                                                ? 'bg-blue-500/10 border-l-2 border-blue-500'
+                                                : 'hover:bg-slate-700 border-l-2 border-transparent'
+                                                }`}
+                                        >
+                                            <span className={`text-sm font-medium ${isAutoMode ? 'text-blue-400' : 'text-slate-200'}`}>
+                                                Auto
+                                            </span>
+                                        </li>
                                         {[5, 10, 15, 20].map((points) => (
                                             <li
                                                 key={points}
@@ -499,14 +527,15 @@ export default function LiveDashboard() {
                                                     setVisiblePoints(points);
                                                     setIsAutoMode(false);
                                                     setIsPointsOpen(false);
+                                                    lastWidthRef.current = chartContainerRef.current?.getBoundingClientRect().width;
                                                 }}
-                                                className={`px-4 py-2.5 cursor-pointer flex flex-col items-start transition-colors duration-150 ${visiblePoints === points
+                                                className={`px-4 py-2.5 cursor-pointer flex flex-col items-start transition-colors duration-150 ${!isAutoMode && visiblePoints === points
                                                     ? 'bg-blue-500/10 border-l-2 border-blue-500'
                                                     : 'hover:bg-slate-700 border-l-2 border-transparent'
                                                     }`}
                                             >
-                                                <span className={`text-sm font-medium ${visiblePoints === points ? 'text-blue-400' : 'text-slate-200'}`}>
-                                                    Last {points} points
+                                                <span className={`text-sm font-medium ${!isAutoMode && visiblePoints === points ? 'text-blue-400' : 'text-slate-200'}`}>
+                                                    {points}
                                                 </span>
                                             </li>
                                         ))}

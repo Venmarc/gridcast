@@ -34,8 +34,8 @@ export async function fetchRegionData(regionId) {
 
     try {
         const fetchPromises = [
-            eiaApiKey ? fetch(`http://127.0.0.1:3005/proxy?url=${encodeURIComponent(`https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?frequency=hourly&data[0]=value&facets[subba][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5&api_key=${eiaApiKey}`)}`).then(r => r.json()) : Promise.resolve(null),
-            weatherApiKey ? fetch(`http://127.0.0.1:3005/proxy?url=${encodeURIComponent(`https://api.openweathermap.org/data/2.5/weather?q=${region.weatherCity}&appid=${weatherApiKey}&units=metric`)}`).then(r => r.json()) : Promise.resolve(null)
+            eiaApiKey ? fetch(`https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?frequency=hourly&data[0]=value&facets[subba][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5&api_key=${eiaApiKey}`).then(r => r.json()) : Promise.resolve(null),
+            weatherApiKey ? fetch(`https://api.openweathermap.org/data/2.5/weather?q=${region.weatherCity}&appid=${weatherApiKey}&units=metric`).then(r => r.json()) : Promise.resolve(null)
         ];
 
         const [eiaJson, weatherJson] = await Promise.all(fetchPromises);
