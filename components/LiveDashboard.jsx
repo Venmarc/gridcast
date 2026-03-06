@@ -57,8 +57,51 @@ export default function LiveDashboard() {
     const [selectedRegionId, setSelectedRegionId] = useState('COAS');
     const socketRef = useRef(null);
 
+    // Responsive Data Points State
+    const [visiblePoints, setVisiblePoints] = useState(15);
+    const [isAutoMode, setIsAutoMode] = useState(true);
+    const chartContainerRef = useRef(null);
+    const [isPointsOpen, setIsPointsOpen] = useState(false);
+    const pointsDropdownRef = useRef(null);
+
+    // Close points dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (pointsDropdownRef.current && !pointsDropdownRef.current.contains(event.target)) {
+                setIsPointsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
+
+    // Smart Data Points Resize Detection
+    useEffect(() => {
+        if (!isAutoMode || !chartContainerRef.current) return;
+
+        let timeoutId = null;
+        const observer = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    const width = entry.contentRect.width;
+                    if (width < 480) setVisiblePoints(8);
+                    else if (width < 640) setVisiblePoints(10);
+                    else if (width < 1024) setVisiblePoints(15);
+                    else setVisiblePoints(20);
+                }, 150);
+            }
+        });
+
+        observer.observe(chartContainerRef.current);
+        return () => {
+            clearTimeout(timeoutId);
+            observer.disconnect();
+        };
+    }, [isAutoMode]);
 
     // Fetch Available Regions
     useEffect(() => {
@@ -199,13 +242,15 @@ export default function LiveDashboard() {
     const [tempUnit, setTempUnit] = useState('C'); // 'C' or 'F'
 
     // Format data for Chart.js
-    const labels = metricsHistory.map((d) => {
+    const displayData = metricsHistory.slice(-visiblePoints);
+
+    const labels = displayData.map((d) => {
         const date = new Date(d.timestamp);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     });
 
     const getTemperatureData = () => {
-        return metricsHistory.map((d) => {
+        return displayData.map((d) => {
             if (tempUnit === 'F') {
                 return (d.weather.temperature * 9 / 5) + 32;
             }
@@ -232,7 +277,7 @@ export default function LiveDashboard() {
             {
                 type: 'bar',
                 label: 'Grid Demand (MW)',
-                data: metricsHistory.map((d) => d.grid.demandMW),
+                data: displayData.map((d) => d.grid.demandMW),
                 backgroundColor: 'rgba(53, 162, 235, 0.7)',
                 yAxisID: 'y1',
             },
@@ -421,16 +466,66 @@ export default function LiveDashboard() {
                         )}
                     </div>
 
-                    <RegionDropdown
-                        regions={regions}
-                        selectedRegionId={selectedRegionId}
-                        onRegionChange={handleRegionChange}
-                    />
+                    <div className="flex flex-col md:flex-row items-end md:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+                        {/* Data Points Selector (styled explicitly like RegionDropdown) */}
+                        <div className="relative w-full md:w-48" ref={pointsDropdownRef}>
+                            <button
+                                onClick={() => setIsPointsOpen(!isPointsOpen)}
+                                className="w-full bg-slate-800 border border-slate-700 hover:border-slate-500 text-slate-200 text-sm rounded-xl px-4 py-2.5 flex items-center justify-between transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                            >
+                                <div className="flex flex-col items-start truncate pr-2">
+                                    <span className="font-semibold truncate">
+                                        Data points
+                                    </span>
+                                    <span className="text-xs text-slate-400 truncate">
+                                        [Last {visiblePoints} points]
+                                    </span>
+                                </div>
+                                <svg
+                                    className={`w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isPointsOpen ? 'rotate-180' : ''}`}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {isPointsOpen && (
+                                <div className="absolute z-50 w-full mt-2 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                                    <ul className="max-h-80 overflow-y-auto custom-scrollbar py-1">
+                                        {[5, 10, 15, 20].map((points) => (
+                                            <li
+                                                key={points}
+                                                onClick={() => {
+                                                    setVisiblePoints(points);
+                                                    setIsAutoMode(false);
+                                                    setIsPointsOpen(false);
+                                                }}
+                                                className={`px-4 py-2.5 cursor-pointer flex flex-col items-start transition-colors duration-150 ${visiblePoints === points
+                                                    ? 'bg-blue-500/10 border-l-2 border-blue-500'
+                                                    : 'hover:bg-slate-700 border-l-2 border-transparent'
+                                                    }`}
+                                            >
+                                                <span className={`text-sm font-medium ${visiblePoints === points ? 'text-blue-400' : 'text-slate-200'}`}>
+                                                    Last {points} points
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+
+                        <RegionDropdown
+                            regions={regions}
+                            selectedRegionId={selectedRegionId}
+                            onRegionChange={handleRegionChange}
+                        />
+                    </div>
                 </div>
             </div>
 
             {/* Chart Container */}
-            <div className="flex flex-col flex-1 p-6 min-h-[500px]">
+            <div ref={chartContainerRef} className="flex flex-col flex-1 p-6 min-h-[500px]">
                 {/* Main Graph */}
                 <div className="flex-1 w-full relative">
                     {metricsHistory.length > 0 ? (

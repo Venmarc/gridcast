@@ -1,38 +1,54 @@
+"use client";
+
 import LiveDashboard from '@/components/LiveDashboard';
+import DynamicHeader from '@/components/DynamicHeader';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
+  const [heroOpacity, setHeroOpacity] = useState(1);
+
+  useEffect(() => {
+    const heroSection = document.getElementById('hero');
+    if (!heroSection) return;
+
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      // Simple fade out calculation based on scroll depth
+      const newOpacity = Math.max(0, 1 - (scrollY / 250));
+      setHeroOpacity(newOpacity);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50 p-6 md:p-12 font-sans selection:bg-blue-500/30">
+    <main className="min-h-screen bg-slate-950 text-slate-50 px-6 md:px-12 pt-0 pb-6 md:pb-12 font-sans selection:bg-blue-500/30">
 
-      <div className="max-w-7xl mx-auto space-y-8 pb-12 flex flex-col min-h-[90vh]">
+      <div className="max-w-7xl mx-auto pb-12 flex flex-col min-h-[90vh]">
 
-        <header className="flex items-center justify-between pt-6 pb-6 top-0 z-50 sticky bg-slate-950/90 backdrop-blur-md border-b border-transparent transition-all">
-          <div className="group cursor-pointer w-fit text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-3">
+        <DynamicHeader />
+
+        <section id="hero" className="pb-10 pt-2 md:pt-4 w-full relative z-10 flex flex-col justify-center min-h-[50vh]">
+          <div
+            style={{ opacity: heroOpacity, transform: `scale(${Math.max(0.95, heroOpacity)})` }}
+            className="group cursor-pointer w-fit font-extrabold tracking-tight flex items-center gap-3 mb-10 pt-0 transition-all duration-75 ease-out origin-left"
+          >
             <Image
               src="/icon.svg"
               alt="GridCast Logo"
-              width={40}
-              height={40}
-              className="rounded-xl drop-shadow-sm transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] group-hover:-translate-y-1"
+              width={48}
+              height={48}
+              priority
+              className="rounded-xl drop-shadow-sm transition-all duration-500 group-hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] group-hover:-translate-y-1"
             />
-            <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent transition-all duration-300 group-hover:drop-shadow-[0_0_12px_rgba(52,211,153,0.2)]">
+            <span className="bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent transition-all duration-500 group-hover:drop-shadow-[0_0_16px_rgba(52,211,153,0.3)] text-4xl md:text-5xl">
               GridCast
             </span>
           </div>
-
-          <div className="flex items-center gap-4 md:gap-8">
-            <nav className="hidden md:flex items-center gap-6 text-sm md:text-base font-medium text-slate-300">
-              <a href="#about" className="hover:text-blue-400 transition-colors">About</a>
-              <a href="#contact" className="hover:text-blue-400 transition-colors">Contact</a>
-            </nav>
-            <div id="header-bell-portal" className="flex items-center justify-center pl-0 md:pl-4 md:border-l border-slate-700/50"></div>
-          </div>
-        </header>
-
-        <section className="pb-10 pt-4 md:pt-8 w-full">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tighter text-slate-50 max-w-5xl leading-[1.05]">
-            Visualizing the Impact of Weather on the <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Power Grid.</span>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-50 max-w-4xl leading-tight">
+            Visualizing the Impact of Weather <br className="hidden md:block" /> on the <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Power Grid.</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-400 max-w-3xl leading-relaxed mt-6 font-medium">
             A high-performance command center analyzing live telemetry across major US energy regions. Monitor environmental stressors and power consumption in real-time.
@@ -44,7 +60,7 @@ export default function Home() {
         </section>
 
         {/* Architecture Details Box */}
-        <section id="about" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12 border-b border-slate-800/80 pt-8 mt-4 scroll-mt-24">
+        <section id="about" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-12 pt-8 mt-4 scroll-mt-24">
           <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl flex flex-col gap-3 shadow-lg">
             <h3 className="text-slate-200 font-bold tracking-tight flex items-center gap-2">
               <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
