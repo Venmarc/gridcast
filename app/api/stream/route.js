@@ -22,8 +22,8 @@ export function GET(request) {
                 }
             };
 
-            // Kick off data fetch without blocking the response
-            ensureDataFetched().catch(console.error);
+            // Kick off data fetch for this region without blocking the response
+            ensureDataFetched(regionId).catch(console.error);
 
             // Send initial pulse
             const initialData = generateLiveData(regionId);
