@@ -22,7 +22,7 @@ export default function AlertPopup({ alert, onClose, onAlertClick }) {
 
     if (!alert) return null;
 
-    const isGrid = alert.type === 'GRID';
+    const isTemp = alert.type === 'TEMP';
 
     const content = (
         <div className="fixed inset-0 z-[9999] pointer-events-none flex justify-center">
@@ -38,7 +38,7 @@ export default function AlertPopup({ alert, onClose, onAlertClick }) {
                             setIsVisible(false);
                             setTimeout(onClose, 500);
                         }}
-                        className={`group p-4 rounded-2xl border-2 flex flex-col gap-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl cursor-pointer hover:scale-[1.02] transition-all duration-300 ${isGrid
+                        className={`group p-4 rounded-2xl border-2 flex flex-col gap-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl cursor-pointer hover:scale-[1.02] transition-all duration-300 ${isTemp
                             ? 'bg-amber-950/40 border-amber-500/50 hover:border-amber-400'
                             : 'bg-blue-950/40 border-blue-500/50 hover:border-blue-400'
                             }`}
@@ -46,10 +46,10 @@ export default function AlertPopup({ alert, onClose, onAlertClick }) {
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-3">
                                 <div className={`relative flex items-center justify-center`}>
-                                    <span className={`absolute h-3 w-3 rounded-full animate-ping opacity-75 ${isGrid ? 'bg-amber-400' : 'bg-blue-400'}`}></span>
-                                    <span className={`relative h-2.5 w-2.5 rounded-full ${isGrid ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
+                                    <span className={`absolute h-3 w-3 rounded-full animate-ping opacity-75 ${isTemp ? 'bg-amber-400' : 'bg-blue-400'}`}></span>
+                                    <span className={`relative h-2.5 w-2.5 rounded-full ${isTemp ? 'bg-amber-500' : 'bg-blue-500'}`}></span>
                                 </div>
-                                <span className={`font-black tracking-[0.1em] text-[10px] uppercase ${isGrid ? 'text-amber-400' : 'text-blue-400'}`}>
+                                <span className={`font-black tracking-[0.1em] text-[10px] uppercase ${isTemp ? 'text-amber-400' : 'text-blue-400'}`}>
                                     {alert.type} System Alert
                                 </span>
                             </div>
