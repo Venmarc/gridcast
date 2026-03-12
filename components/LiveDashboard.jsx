@@ -256,6 +256,60 @@ export default function LiveDashboard() {
         };
     }, [selectedRegionId]);
 
+    // --- GLOBAL ANOMALY BACKGROUND POLLING ---
+    const globalBaselinesRef = useRef({});
+
+    useEffect(() => {
+        const pollGlobalStatus = async () => {
+            try {
+                const res = await fetch('/api/global-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        activeRegionId: selectedRegionId,
+                        baselines: globalBaselinesRef.current
+                    })
+                });
+
+                if (!res.ok) return;
+
+                const data = await res.json();
+                
+                if (data.anomalies && data.anomalies.length > 0) {
+                    data.anomalies.forEach(anomaly => {
+                        // Update our local baseline reference whether it's an INIT or a real alert
+                        globalBaselinesRef.current[anomaly.regionId] = anomaly.newBaseline;
+
+                        if (anomaly.type !== 'INIT') {
+                            const newAlert = {
+                                id: Date.now() + Math.random(),
+                                timestamp: new Date(),
+                                type: anomaly.type,
+                                regionId: anomaly.regionId, // the anomalous region
+                                message: anomaly.message,
+                                severity: anomaly.type === 'GRID' ? 'warning' : 'info'
+                            };
+
+                            setAlerts(prev => [newAlert, ...prev]);
+                            if (!isBellOpenRef.current) setActiveAlert(newAlert);
+                            console.log(`Global alert triggered for ${anomaly.regionId}`);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to poll global status:", err);
+            }
+        };
+
+        // Poll every 20 seconds
+        const intervalId = setInterval(pollGlobalStatus, 20000);
+        // Kick off an initial poll after a slight delay
+        setTimeout(pollGlobalStatus, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [selectedRegionId]);
+    // -----------------------------------------
+
     const [tempUnit, setTempUnit] = useState('C'); // 'C' or 'F'
 
     // Format data for Chart.js
@@ -315,13 +369,23 @@ export default function LiveDashboard() {
         const dataMax = Math.max(...tempData);
         let range = dataMax - dataMin;
 
-        // Give it a minimum range if temperature is perfectly stable
-        if (range < 0.5) range = 0.5;
+        // Calculate dynamic sensitivity based on visible points
+        // 20 data points -> ~0.1 C per cm
+        // 5 data points -> ~0.05 C per cm
+        // Assuming ~10cm chart height, we want a total range of 1.0 C for 20 points, and 0.5 C for 5 points.
+        const targetRangeC = 0.5 + ((visiblePoints - 5) / 15) * 0.5;
+        const targetRange = tempUnit === 'F' ? targetRangeC * 1.8 : targetRangeC;
 
-        // Add 10% padding so the line doesn't scrape the very top/bottom of the chart
-        const padding = range * 0.1;
-        tempMin = dataMin - padding;
-        tempMax = dataMax + padding;
+        if (range < targetRange) {
+            const center = (dataMin + dataMax) / 2;
+            tempMin = center - targetRange / 2;
+            tempMax = center + targetRange / 2;
+        } else {
+            // Add 10% padding so the line doesn't scrape the very top/bottom of the chart
+            const padding = range * 0.1;
+            tempMin = dataMin - padding;
+            tempMax = dataMax + padding;
+        }
     }
 
     const options = {

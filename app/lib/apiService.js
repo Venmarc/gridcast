@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { regionMapping } from './regionMapping';
 
 // Use global to persist in-memory cache across Next.js API route handler invocations.
@@ -36,22 +37,39 @@ export async function fetchRegionData(regionId) {
     const eiaApiKey = process.env.EIA_API_KEY;
 
     try {
-        const fetchPromises = [
-            eiaApiKey ? fetch(`https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?frequency=hourly&data[0]=value&facets[subba][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5&api_key=${eiaApiKey}`).then(r => r.json()) : Promise.resolve(null),
-            weatherApiKey ? fetch(`https://api.openweathermap.org/data/2.5/weather?q=${region.weatherCity}&appid=${weatherApiKey}&units=metric`).then(r => r.json()) : Promise.resolve(null)
-        ];
+        let eiaUrl = '';
+        if (region.eiaType === 'subba') {
+            eiaUrl = `https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/?frequency=hourly&data[0]=value&facets[subba][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1&api_key=${eiaApiKey}`;
+        } else {
+            // Default to Balancing Authority (BA) endpoint
+            eiaUrl = `https://api.eia.gov/v2/electricity/rto/region-data/data/?frequency=hourly&data[0]=value&facets[respondent][]=${region.eiaFacet}&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1&api_key=${eiaApiKey}`;
+        }
 
-        const [eiaJson, weatherJson] = await Promise.all(fetchPromises);
+        const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${region.weatherCity}&appid=${weatherApiKey}&units=metric`;
+
+        const axiosOptions = { timeout: 10000 };
+
+        const [eiaRes, weatherRes] = await Promise.all([
+            eiaApiKey ? axios.get(eiaUrl, axiosOptions).catch(err => {
+                console.error(`[${regionId}] EIA Fetch failed:`, err.message);
+                return null;
+            }) : Promise.resolve(null),
+            weatherApiKey ? axios.get(weatherUrl, axiosOptions).catch(err => {
+                console.error(`[${regionId}] Weather Fetch failed:`, err.message);
+                return null;
+            }) : Promise.resolve(null)
+        ]);
+
         let newRealData = { ...realDataRegistry[regionId] };
 
-        if (weatherJson && weatherJson.main) {
-            newRealData.temperature = weatherJson.main.temp;
-            newRealData.humidity = weatherJson.main.humidity;
+        if (weatherRes && weatherRes.data && weatherRes.data.main) {
+            newRealData.temperature = weatherRes.data.main.temp;
+            newRealData.humidity = weatherRes.data.main.humidity;
             console.log(`[${regionId}] Weather updated: ${newRealData.temperature}°C`);
         }
 
-        if (eiaJson && eiaJson.response && eiaJson.response.data) {
-            const validData = eiaJson.response.data.find(d => d.value !== null && d.value !== undefined);
+        if (eiaRes && eiaRes.data && eiaRes.data.response && eiaRes.data.response.data) {
+            const validData = eiaRes.data.response.data.find(d => d.value !== null && d.value !== undefined);
             if (validData) {
                 newRealData.demandMW = Number(validData.value);
                 console.log(`[${regionId}] EIA Grid Demand updated: ${newRealData.demandMW} MW`);
@@ -98,11 +116,53 @@ export async function ensureDataFetched(targetRegionId = null) {
             console.log(`Refreshing ${regionsToFetch.length} stale regions...`);
             globalMemory.isFetching = true;
             try {
-                const fetchJobs = regionsToFetch.map(id => fetchRegionData(id));
-                await Promise.allSettled(fetchJobs);
+                for (const id of regionsToFetch) {
+                    await fetchRegionData(id);
+                    await new Promise(r => setTimeout(r, 200)); // Rate limiting buffer
+                }
             } finally {
                 globalMemory.isFetching = false;
             }
+        }
+    }
+}
+
+// Dedicated background poller. Designed to be called frequently but only
+// fetch a very small number of regions at a time to stay under rate limits.
+export async function triggerBackgroundPoll(activeRegionId) {
+    if (globalMemory.isFetching) return;
+
+    const now = Date.now();
+    // In background, we consider data stale after 5 minutes (300000ms)
+    // to keep it responsive enough for anomaly detection.
+    const BACKGROUND_FETCH_INTERVAL = 300000;
+
+    // Find all regions that need an update, absolutely prioritizing the active one.
+    // Exclude the activeRegionId from the background list since SSE handles it.
+    let staleRegions = Object.keys(regionMapping).filter(id => 
+        id !== activeRegionId && 
+        now - (globalMemory.lastFetchTimes[id] || 0) > BACKGROUND_FETCH_INTERVAL
+    );
+
+    // Sort by oldest fetch time first
+    staleRegions.sort((a, b) => {
+        return (globalMemory.lastFetchTimes[a] || 0) - (globalMemory.lastFetchTimes[b] || 0);
+    });
+
+    if (staleRegions.length > 0) {
+        // Only grab the 2 oldest regions to fetch in this cycle.
+        // This spreads the load out over many minutes.
+        const batch = staleRegions.slice(0, 2);
+        
+        console.log(`[Background] Polling ${batch.length} stale regions: ${batch.join(', ')}`);
+        globalMemory.isFetching = true;
+        try {
+            for (const id of batch) {
+                await fetchRegionData(id);
+                await new Promise(r => setTimeout(r, 500)); // Be gentle with EIA
+            }
+        } finally {
+            globalMemory.isFetching = false;
         }
     }
 }
